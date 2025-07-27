@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "./ui/button";
 
 export default function Hero() {
@@ -19,7 +20,9 @@ export default function Hero() {
           Your trusted platform for transparent and secure elections...
         </p>
         <div className="flex justify-center gap-4 animate-fade-in-up">
-          <Button>Get Started</Button>
+          <Link href="/elections">
+            <Button>Get Started</Button>
+          </Link>
         </div>
       </div>
     </section>

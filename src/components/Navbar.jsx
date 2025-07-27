@@ -29,7 +29,7 @@ export default function Navbar() {
               Elections
             </Link>
           </nav>
-          
+
           {/* Mobile hamburger menu */}
           <div className="md:hidden">
             <DropdownMenu>
@@ -40,22 +40,30 @@ export default function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link href="/" className="w-full">Home</Link>
+                  <Link href="/" className="w-full">
+                    Home
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/results" className="w-full">Elections</Link>
+                  <Link href="/elections" className="w-full">
+                    Elections
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/login" className="w-full">Login</Link>
+                  <Link href="/login" className="w-full">
+                    Login
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/register" className="w-full">Register</Link>
+                  <Link href="/register" className="w-full">
+                    Register
+                  </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
+
           <div className="hidden md:flex items-center gap-3">
             <Button
               variant="secondary"
