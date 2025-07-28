@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import SearchIcon from "@/components/icons/SearchIcon";
+
 import { electionsData } from "@/config/electionsData";
 
 export default function ElectionsPage() {
@@ -14,32 +15,47 @@ export default function ElectionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Simulate API call - replace this with actual API call in the future
+  // Fetch from API, fallback to static data if needed
   useEffect(() => {
     const fetchElections = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/elections');
-        // const data = await response.json();
-        // setElections(data);
-
-        setElections(electionsData);
+        const response = await fetch("/api/auth/voter/elections");
+        if (!response.ok) throw new Error("API error");
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setElections(data.map(election => ({
+            ...election,
+            status: election.status || getElectionStatus(election.startDate, election.endDate),
+            id: election._id || election.id,
+          })));
+        } else {
+          setElections([]);
+          setError("No elections found in the database.");
+        }
       } catch (err) {
+        setElections([]);
         setError("Failed to fetch elections. Please try again later.");
         console.error("Error fetching elections:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchElections();
+    // eslint-disable-next-line
   }, []);
+
+  // Helper to determine status if not present in DB
+  function getElectionStatus(startDate, endDate) {
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (now < start) return "upcoming";
+    if (now > end) return "completed";
+    return "ongoing";
+  }
 
   // Memoized filtered elections for better performance
   const filteredElections = useMemo(() => {

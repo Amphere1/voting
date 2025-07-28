@@ -1,8 +1,10 @@
+
 import { dbConnect } from '@/lib/dbconnect';
 import User from '@/models/user';
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 export async function POST(req) {
   await dbConnect();
@@ -25,6 +27,16 @@ export async function POST(req) {
     role: 'voter',
   });
   await user.save();
+
+  // Auto-login: set JWT as HTTP-only cookie
+  const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
+  cookies().set('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 60 * 24,
+    path: '/',
+  });
 
   return NextResponse.json({ message: 'Voter registered successfully' }, { status: 201 });
 }
