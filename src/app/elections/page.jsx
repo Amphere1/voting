@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import SearchIcon from "@/components/icons/SearchIcon";
 
-import { electionsData } from "@/config/electionsData";
+
 
 export default function ElectionsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,14 +15,14 @@ export default function ElectionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch from API, fallback to static data if needed
+  // Fetch from API
   useEffect(() => {
     const fetchElections = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/auth/voter/elections");
+        const response = await fetch("/api/elections");
         if (!response.ok) throw new Error("API error");
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
