@@ -42,5 +42,4 @@ Admin login : /api/auth/admin/login   'admin data is not seeded'
 Admin Actions (Delete, Update): /api/admin/elections/${ElectionId}
               (GET, POST): /api/admin/elections
 
- # election model to be changed
              
