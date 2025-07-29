@@ -178,14 +178,14 @@ export default function ElectionsPage() {
                     asChild
                     className="flex-1 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                   >
-                    <Link href={`/elections/${election.id}`}>View Details</Link>
+                    <Link href={`/election-details/${election.id}`}>View Details</Link>
                   </Button>
                   <Button
                     asChild
                     className="flex-1 rounded-full bg-blue-600 hover:bg-blue-700 transition-colors"
                     disabled={election.status === "completed"}
                   >
-                    <Link href={`/elections/${election.id}/vote`}>
+                    <Link href={`/election-details/${election.id}/vote`}>
                       {election.status === "completed"
                         ? "Voting Closed"
                         : "Participate"}
