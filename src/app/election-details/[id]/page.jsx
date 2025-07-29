@@ -144,12 +144,25 @@ export default function ElectionDetailsPage() {
                       <h4 className="text-lg font-bold text-gray-900">{candidate.name}</h4>
                       <p className="text-sm text-gray-600">{candidate.party}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      className="mt-4 w-full rounded-full py-2 text-sm font-semibold"
-                    >
-                      View Profile
-                    </Button>
+                    <div className="mt-4 flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 rounded-full py-2 text-sm font-semibold"
+                      >
+                        View Profile
+                      </Button>
+                      {election.status === "ongoing" && isEligibleToVote() && (
+                        <Button
+                          className="flex-1 rounded-full py-2 text-sm font-bold bg-green-600 hover:bg-green-700 transition-colors"
+                          onClick={() => {
+                            // TODO: Implement vote functionality
+                            alert(`Voting for ${candidate.name}`);
+                          }}
+                        >
+                          Vote
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -157,58 +170,63 @@ export default function ElectionDetailsPage() {
           </div>
         </div>
 
-        {/* Voting Section */}
-        <Card className="bg-white shadow-md">
-          <CardContent className="p-6 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="rounded-full bg-green-100 p-3 text-green-600">
-                <CheckIcon className="h-8 w-8" />
+        {/* Status Information */}
+        {election.status === "completed" && (
+          <Card className="bg-gray-50 shadow-md mb-8">
+            <CardContent className="p-6 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-full bg-gray-100 p-3 text-gray-600">
+                  <CheckIcon className="h-8 w-8" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">This election has ended</p>
+                  <p className="text-sm text-gray-600">Voting closed on {formatDate(election.endDate)}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="mt-2 rounded-full px-8 py-3 text-base font-bold tracking-wider"
+                  onClick={() => router.push(`/election-details/${election.id}/results`)}
+                >
+                  View Results
+                </Button>
               </div>
-              <div>
-                <p className="font-semibold text-gray-900">
-                  {isEligibleToVote() 
-                    ? "You are eligible to vote!" 
-                    : "You are not eligible to vote for this election."
-                  }
-                </p>
-                <p className="text-sm text-gray-600">
-                  {isEligibleToVote() 
-                    ? "Your vote matters. Make it count." 
-                    : "Please check the eligibility requirements above."
-                  }
-                </p>
+            </CardContent>
+          </Card>
+        )}
+        
+        {election.status === "upcoming" && (
+          <Card className="bg-yellow-50 shadow-md mb-8">
+            <CardContent className="p-6 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-full bg-yellow-100 p-3 text-yellow-600">
+                  <CheckIcon className="h-8 w-8" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">This election has not started yet</p>
+                  <p className="text-sm text-gray-600">
+                    Voting begins on {formatDate(election.startDate)}
+                  </p>
+                </div>
               </div>
-            </div>
-            
-            {isEligibleToVote() && election.status === "ongoing" && (
-              <Button
-                className="mt-6 w-full max-w-xs rounded-full px-8 py-3 text-base font-bold tracking-wider transition-transform duration-200 hover:scale-105"
-                onClick={() => router.push(`/election-details/${election.id}/vote`)}
-              >
-                Vote Now
-              </Button>
-            )}
-            
-            {election.status === "completed" && (
-              <Button
-                variant="outline"
-                className="mt-6 w-full max-w-xs rounded-full px-8 py-3 text-base font-bold tracking-wider"
-                onClick={() => router.push(`/election-details/${election.id}/results`)}
-              >
-                View Results
-              </Button>
-            )}
-            
-            {election.status === "upcoming" && (
-              <div className="mt-6">
-                <p className="text-gray-600">This election has not started yet.</p>
-                <p className="text-sm text-gray-500">
-                  Voting begins on {formatDate(election.startDate)}
-                </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {election.status === "ongoing" && !isEligibleToVote() && (
+          <Card className="bg-red-50 shadow-md mb-8">
+            <CardContent className="p-6 text-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-full bg-red-100 p-3 text-red-600">
+                  <CheckIcon className="h-8 w-8" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">You are not eligible to vote</p>
+                  <p className="text-sm text-gray-600">Please check the eligibility requirements above</p>
+                </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Navigation */}
         <div className="mt-8 flex justify-between">
