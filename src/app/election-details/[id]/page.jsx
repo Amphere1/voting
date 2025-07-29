@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CheckIcon from "@/components/icons/CheckIcon";
@@ -148,8 +149,9 @@ export default function ElectionDetailsPage() {
                       <Button
                         variant="outline"
                         className="flex-1 rounded-full py-2 text-sm font-semibold"
+                        asChild
                       >
-                        View Profile
+                        <Link href={`/candidate/${candidate.id}`}>View Profile</Link>
                       </Button>
                       {election.status === "ongoing" && isEligibleToVote() && (
                         <Button
