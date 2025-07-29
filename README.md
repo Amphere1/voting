@@ -34,3 +34,12 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+Voter login : /api/auth/voter/login
+Voter Signup : /api/auth/voter/signup
+Admin login : /api/auth/admin/login   'admin data is not seeded'
+Admin Actions (Delete, Update): /api/admin/elections/${ElectionId}
+              (GET, POST): /api/admin/elections
+
+             
