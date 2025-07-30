@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { candidatesData } from "@/config/candidatesData";
+import { Badge } from "@/components/ui/badge";
+import { checkAuthStatus, redirectToLogin } from '@/lib/authUtils';
+import CheckIcon from "@/components/icons/CheckIcon";
 
 export default function CandidatePage() {
   const params = useParams();
@@ -12,27 +14,39 @@ export default function CandidatePage() {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [votingLoading, setVotingLoading] = useState(false);
+  const [user, setUser] = useState(null);
 
-  // Simulate API call - replace this with actual API call in the future
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authStatus = await checkAuthStatus();
+      if (authStatus.isAuthenticated) {
+        setUser(authStatus.user);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
   useEffect(() => {
     const fetchCandidateDetails = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        // Fetch candidate details from API
+        const response = await fetch(`/api/candidate/${params.id}`);
+        const data = await response.json();
 
-        // TODO: Replace with actual API call
-        // const response = await fetch(`/api/candidates/${params.id}`);
-        // const data = await response.json();
-        // setCandidate(data);
-
-        const candidateData = candidatesData[params.id];
-        if (!candidateData) {
-          throw new Error("Candidate not found");
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch candidate details');
         }
-        setCandidate(candidateData);
+
+        if (data.success) {
+          setCandidate(data.candidate);
+        } else {
+          throw new Error(data.error || 'Failed to fetch candidate details');
+        }
       } catch (err) {
         setError(err.message || "Failed to fetch candidate details. Please try again later.");
         console.error("Error fetching candidate details:", err);
@@ -46,11 +60,89 @@ export default function CandidatePage() {
     }
   }, [params.id]);
 
+  const handleVote = async () => {
+    // Check authentication first
+    if (!user) {
+      alert('Please log in to vote');
+      redirectToLogin();
+      return;
+    }
+
+    // Check if user has voter role
+    if (user.role !== 'voter') {
+      alert('Only registered voters can cast votes');
+      return;
+    }
+
+    if (!candidate.electionId) {
+      alert('This candidate is not associated with any active election.');
+      return;
+    }
+
+    // Check if user has already voted in this election
+    if (user.votedElections && user.votedElections.includes(candidate.electionId)) {
+      alert('You have already voted in this election');
+      return;
+    }
+
+    try {
+      setVotingLoading(true);
+
+      const response = await fetch(`/api/elections/${candidate.electionId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          candidateId: candidate._id,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        alert(`Vote cast successfully for ${candidate.name}! 🗳️\n\nThank you for participating in the democratic process.`);
+        
+        // Update user's voted elections
+        setUser(prev => ({
+          ...prev,
+          votedElections: [...(prev.votedElections || []), candidate.electionId]
+        }));
+        
+        // Refresh candidate data to show updated vote count
+        const candidateResponse = await fetch(`/api/candidate/${params.id}`);
+        const candidateData = await candidateResponse.json();
+        if (candidateData.success) {
+          setCandidate(candidateData.candidate);
+        }
+      } else {
+        alert(`Failed to cast vote: ${result.error || 'Unknown error occurred'}`);
+      }
+    } catch (error) {
+      console.error('Error casting vote:', error);
+      alert('Failed to cast vote. Please check your connection and try again.');
+    } finally {
+      setVotingLoading(false);
+    }
+  };
+
+  const handleContact = () => {
+    if (candidate.email) {
+      window.location.href = `mailto:${candidate.email}?subject=Campaign Inquiry for ${candidate.name}`;
+    } else {
+      alert(`Contact information for ${candidate.name} is not available at this time. Please check back later or visit the campaign office.`);
+    }
+  };
+
   if (loading) {
     return (
       <main className="flex flex-1 justify-center bg-gray-50 py-12">
         <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg text-gray-600">Loading candidate profile...</p>
+          </div>
         </div>
       </main>
     );
@@ -79,14 +171,33 @@ export default function CandidatePage() {
         <Card className="bg-white shadow-sm">
           <CardContent className="p-8">
             <div className="flex items-start gap-8 flex-col md:flex-row">
-              <div 
-                className="h-40 w-40 flex-shrink-0 rounded-full bg-cover bg-center bg-no-repeat shadow-md mx-auto md:mx-0" 
-                style={{ backgroundImage: `url("${candidate.image}")` }}
-              />
+              {candidate.image ? (
+                <div 
+                  className="h-40 w-40 flex-shrink-0 rounded-full bg-cover bg-center bg-no-repeat shadow-md mx-auto md:mx-0" 
+                  style={{ backgroundImage: `url("${candidate.image}")` }}
+                />
+              ) : (
+                <div className="h-40 w-40 flex-shrink-0 rounded-full bg-gray-200 flex items-center justify-center shadow-md mx-auto md:mx-0">
+                  <span className="text-gray-500 text-sm">No Image</span>
+                </div>
+              )}
               <div className="flex-grow pt-4 text-center md:text-left">
                 <h1 className="text-4xl font-bold text-gray-900">{candidate.name}</h1>
                 <p className="mt-1 text-lg text-gray-600">{candidate.party}</p>
+                {candidate.age && <p className="mt-1 text-md text-gray-500">Age: {candidate.age}</p>}
                 <p className="mt-2 text-lg italic text-blue-700">"{candidate.slogan}"</p>
+                {candidate.election && (
+                  <div className="mt-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      candidate.election.status === 'active' ? 'bg-green-100 text-green-800' :
+                      candidate.election.status === 'upcoming' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      Running for: {candidate.election.title}
+                    </span>
+                  </div>
+                )}
+                <p className="mt-2 text-lg font-semibold text-blue-600">Current Votes: {candidate.votes || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -132,16 +243,20 @@ export default function CandidatePage() {
             <Card className="bg-white shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Key Achievements</h3>
-                <ul className="space-y-3">
-                  {candidate.achievements.map((achievement, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <div className="mt-1.5 h-2 w-2 rounded-full bg-blue-600 flex-shrink-0" />
-                      <span className="text-sm text-gray-700 leading-relaxed">
-                        {achievement}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                {candidate.achievements && candidate.achievements.length > 0 ? (
+                  <ul className="space-y-3">
+                    {candidate.achievements.map((achievement, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <div className="mt-1.5 h-2 w-2 rounded-full bg-blue-600 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 leading-relaxed">
+                          {achievement}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500">No achievements listed yet.</p>
+                )}
               </CardContent>
             </Card>
 
@@ -150,22 +265,61 @@ export default function CandidatePage() {
               <CardContent className="p-6 text-center">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Support {candidate.name}</h3>
                 <div className="space-y-3">
-                  <Button 
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      // TODO: Implement vote functionality
-                      alert(`Voting for ${candidate.name}`);
-                    }}
-                  >
-                    Vote for {candidate.name}
-                  </Button>
+                  {!user && (
+                    <div className="w-full p-3 bg-yellow-100 text-yellow-800 rounded-lg">
+                      <span className="font-medium">Please log in to vote</span>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="ml-2" 
+                        onClick={redirectToLogin}
+                      >
+                        Log In
+                      </Button>
+                    </div>
+                  )}
+
+                  {user && user.role !== 'voter' && (
+                    <div className="w-full p-3 bg-red-100 text-red-800 rounded-lg">
+                      <span className="font-medium">Only registered voters can vote</span>
+                    </div>
+                  )}
+
+                  {user && user.votedElections && user.votedElections.includes(candidate.electionId) && (
+                    <div className="w-full p-3 bg-green-100 text-green-800 rounded-lg flex items-center justify-center gap-2">
+                      <CheckIcon className="w-5 h-5" />
+                      <span className="font-medium">You have voted for {candidate.name}!</span>
+                    </div>
+                  )}
+
+                  {candidate.election && (candidate.election.status === 'active' || candidate.election.status === 'ongoing') && 
+                   user && user.role === 'voter' && 
+                   !(user.votedElections && user.votedElections.includes(candidate.electionId)) && (
+                    <Button 
+                      className="w-full bg-green-600 hover:bg-green-700"
+                      onClick={handleVote}
+                      disabled={votingLoading}
+                    >
+                      {votingLoading ? 'Casting Vote...' : `Vote for ${candidate.name} 🗳️`}
+                    </Button>
+                  )}
+                  
+                  {candidate.election && candidate.election.status === 'upcoming' && (
+                    <div className="w-full p-3 bg-yellow-100 text-yellow-800 rounded-lg">
+                      <span className="font-medium">Voting opens soon for {candidate.election.title}</span>
+                    </div>
+                  )}
+                  
+                  {candidate.election && candidate.election.status === 'completed' && (
+                    <div className="w-full p-3 bg-gray-100 text-gray-800 rounded-lg">
+                      <span className="font-medium">Voting has ended for {candidate.election.title}</span>
+                    </div>
+                  )}
+                  
                   <Button 
                     variant="outline" 
                     className="w-full"
-                    onClick={() => {
-                      // TODO: Implement contact functionality
-                      alert(`Contact ${candidate.name}`);
-                    }}
+                    onClick={handleContact}
                   >
                     Contact Campaign
                   </Button>
@@ -173,20 +327,52 @@ export default function CandidatePage() {
               </CardContent>
             </Card>
 
-            {/* Social Links Placeholder */}
+            {/* Social Links */}
             <Card className="bg-white shadow-sm">
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Follow Campaign</h3>
                 <div className="space-y-2">
-                  <Button variant="outline" className="w-full text-left justify-start">
-                    📧 Email Updates
-                  </Button>
-                  <Button variant="outline" className="w-full text-left justify-start">
-                    🐦 Twitter
-                  </Button>
-                  <Button variant="outline" className="w-full text-left justify-start">
-                    📘 Facebook
-                  </Button>
+                  {candidate.email && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-left justify-start"
+                      onClick={() => window.location.href = `mailto:${candidate.email}`}
+                    >
+                      📧 Email: {candidate.email}
+                    </Button>
+                  )}
+                  {candidate.twitter && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-left justify-start"
+                      onClick={() => window.open(candidate.twitter, '_blank')}
+                    >
+                      🐦 Twitter
+                    </Button>
+                  )}
+                  {candidate.facebook && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-left justify-start"
+                      onClick={() => window.open(candidate.facebook, '_blank')}
+                    >
+                      📘 Facebook
+                    </Button>
+                  )}
+                  {candidate.website && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full text-left justify-start"
+                      onClick={() => window.open(candidate.website, '_blank')}
+                    >
+                      🌐 Website
+                    </Button>
+                  )}
+                  {!candidate.email && !candidate.twitter && !candidate.facebook && !candidate.website && (
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      No social media links available
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>

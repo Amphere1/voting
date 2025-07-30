@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 export default function CandidateRegistrationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [elections, setElections] = useState([]);
   const [formData, setFormData] = useState({
     // Personal Information
     firstName: "",
@@ -27,6 +28,7 @@ export default function CandidateRegistrationPage() {
     dateOfBirth: "",
 
     // Political Information
+    electionId: "",
     party: "",
     slogan: "",
     manifesto: "",
@@ -47,6 +49,23 @@ export default function CandidateRegistrationPage() {
   });
 
   const [errors, setErrors] = useState({});
+
+  // Fetch elections for dropdown
+  useEffect(() => {
+    const fetchElections = async () => {
+      try {
+        const res = await fetch('/api/admin/elections');
+        if (res.ok) {
+          const data = await res.json();
+          // Only show ongoing/upcoming elections
+          setElections((data.elections || []).filter(e => e.status !== 'completed'));
+        }
+      } catch (err) {
+        // Ignore error, just don't show elections
+      }
+    };
+    fetchElections();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -72,6 +91,7 @@ export default function CandidateRegistrationPage() {
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
     if (!formData.email.trim()) newErrors.email = "Email is required";
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    if (!formData.electionId) newErrors.electionId = "Election selection is required";
     if (!formData.party) newErrors.party = "Political party is required";
     if (!formData.manifesto.trim())
       newErrors.manifesto = "Manifesto is required";
@@ -100,8 +120,10 @@ export default function CandidateRegistrationPage() {
       newErrors.termsAccepted = "You must accept the terms and conditions";
     }
 
-    // Profile image validation
-    if (formData.profileImage) {
+    // Profile image validation (required)
+    if (!formData.profileImage) {
+      newErrors.profileImage = "Profile image is required";
+    } else {
       const allowedTypes = [
         "image/jpeg",
         "image/jpg",
@@ -136,33 +158,29 @@ export default function CandidateRegistrationPage() {
     try {
       // Create FormData for file upload
       const formDataToSend = new FormData();
-      
-      // Add all form fields
+
+      // Send all fields expected by backend
       formDataToSend.append('name', `${formData.firstName} ${formData.lastName}`);
       formDataToSend.append('organization', formData.party);
-      formDataToSend.append('age', new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear());
+      formDataToSend.append('electionId', formData.electionId);
+      if (formData.dateOfBirth) {
+        formDataToSend.append('age', new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear());
+        formDataToSend.append('dateOfBirth', formData.dateOfBirth);
+      }
       formDataToSend.append('bio', formData.manifesto);
-      
-      // Add profile image if exists
+      formDataToSend.append('experience', formData.experience);
+      formDataToSend.append('education', formData.education);
+      formDataToSend.append('achievements', formData.achievements);
+      formDataToSend.append('website', formData.website);
+      formDataToSend.append('twitter', formData.twitter);
+      formDataToSend.append('facebook', formData.facebook);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('slogan', formData.slogan);
+      // Add profile image (required)
       if (formData.profileImage) {
         formDataToSend.append('img', formData.profileImage);
       }
-      
-      // Add additional data as JSON in bio field (since backend expects these fields)
-      const additionalData = {
-        email: formData.email,
-        phone: formData.phone,
-        dateOfBirth: formData.dateOfBirth,
-        slogan: formData.slogan,
-        experience: formData.experience,
-        education: formData.education,
-        achievements: formData.achievements,
-        website: formData.website,
-        twitter: formData.twitter,
-        facebook: formData.facebook,
-      };
-      
-      formDataToSend.append('additionalData', JSON.stringify(additionalData));
 
       const response = await fetch('/api/candidate', {
         method: 'POST',
@@ -170,14 +188,14 @@ export default function CandidateRegistrationPage() {
       });
 
       const result = await response.json();
-      
+
       if (response.ok) {
         alert("Registration successful! Your profile is under review.");
         router.push("/elections");
       } else {
         alert(result.error || "Registration failed. Please try again.");
       }
-      
+
     } catch (error) {
       console.error("Registration error:", error);
       alert("Registration failed. Please try again.");
@@ -324,6 +342,43 @@ export default function CandidateRegistrationPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
+                <Label htmlFor="electionId">Election *</Label>
+                <Select
+                  value={formData.electionId}
+                  onValueChange={(value) => handleInputChange("electionId", value)}
+                  required
+                >
+                  <SelectTrigger className={errors.electionId ? "border-red-500" : ""}>
+                    <SelectValue placeholder="Select an election" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {elections.map((election) => (
+                      <SelectItem key={election._id} value={election._id}>
+                        {election.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.electionId && (
+                  <p className="text-sm text-red-500">{errors.electionId}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="party">Political Party *</Label>
+                <Input
+                  id="party"
+                  placeholder="e.g., Democratic Party, Republican Party"
+                  value={formData.party}
+                  onChange={(e) => handleInputChange("party", e.target.value)}
+                  className={errors.party ? "border-red-500" : ""}
+                />
+                {errors.party && (
+                  <p className="text-sm text-red-500">{errors.party}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="slogan">Campaign Slogan</Label>
                 <Input
                   id="slogan"
@@ -450,6 +505,23 @@ export default function CandidateRegistrationPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Terms and Conditions */}
+          <div className="flex items-center space-x-2">
+            <input
+              id="termsAccepted"
+              type="checkbox"
+              checked={formData.termsAccepted}
+              onChange={(e) => handleInputChange("termsAccepted", e.target.checked)}
+              className="h-4 w-4 border-gray-300 rounded"
+            />
+            <Label htmlFor="termsAccepted" className="mb-0">
+              I accept the terms and conditions *
+            </Label>
+          </div>
+          {errors.termsAccepted && (
+            <p className="text-sm text-red-500">{errors.termsAccepted}</p>
+          )}
 
           {/* Submit Buttons */}
           <div className="flex gap-4 justify-center">

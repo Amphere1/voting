@@ -253,7 +253,7 @@ export default function ElectionsPage() {
                     asChild
                     className="flex-1 rounded-lg border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
                   >
-                    <Link href={`/election-details/${election.id}`}>
+                    <Link href={`/election-details/${election._id || election.id}`}>
                       View Details
                     </Link>
                   </Button>
@@ -263,7 +263,7 @@ export default function ElectionsPage() {
                       asChild
                       className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                     >
-                      <Link href={`/election-details/${election.id}`}>
+                      <Link href={`/election-details/${election._id || election.id}`}>
                         Vote Now
                       </Link>
                     </Button>
@@ -284,7 +284,7 @@ export default function ElectionsPage() {
                       variant="secondary"
                       className="flex-1 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
                     >
-                      <Link href={`/election-details/${election.id}`}>
+                      <Link href={`/election-details/${election._id || election.id}`}>
                         View Results
                       </Link>
                     </Button>

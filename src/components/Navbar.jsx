@@ -6,6 +6,7 @@ import Link from "next/link";
 import LogoIcon from "./icons/LogoIcon";
 import HamburgerIcon from "./icons/HamburgerIcon";
 import { Button } from "./ui/button";
+import { checkAuthStatus } from "@/lib/authUtils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,16 +21,14 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthStatus();
+    checkAuth();
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/check');
-      const authData = await response.json();
-      
-      if (authData.isLoggedIn) {
-        setUser(authData.user);
+      const authStatus = await checkAuthStatus();
+      if (authStatus.isAuthenticated) {
+        setUser(authStatus.user);
       } else {
         setUser(null);
       }
@@ -45,10 +44,9 @@ export default function Navbar() {
     e.preventDefault();
     
     try {
-      const response = await fetch('/api/auth/check');
-      const authData = await response.json();
+      const authStatus = await checkAuthStatus();
       
-      if (authData.isLoggedIn && authData.user.role === 'admin') {
+      if (authStatus.isAuthenticated && authStatus.user.role === 'admin') {
         router.push('/admin');
       } else {
         router.push('/admin/login');
@@ -68,7 +66,8 @@ export default function Navbar() {
       if (response.ok) {
         setUser(null);
         router.push('/');
-        router.refresh(); // Refresh the page to clear any cached data
+        // Refresh the page to clear any cached data
+        window.location.reload();
       }
     } catch (error) {
       console.error('Logout error:', error);
@@ -129,9 +128,12 @@ export default function Navbar() {
                 ) : user ? (
                   <>
                     <DropdownMenuItem disabled>
-                      Welcome, {user.name}
+                      <div className="text-left">
+                        <div className="font-medium">Hello, {user.name}</div>
+                        <div className="text-xs text-gray-500 capitalize">({user.role})</div>
+                      </div>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
                       Logout
                     </DropdownMenuItem>
                   </>
@@ -158,11 +160,15 @@ export default function Navbar() {
               <div className="text-gray-400">Loading...</div>
             ) : user ? (
               <div className="flex items-center gap-3">
-                <span className="text-gray-600">Welcome, {user.name}</span>
+                <div className="text-right">
+                  <span className="text-gray-800 font-medium">Hello, {user.name}</span>
+                  <div className="text-xs text-gray-500 capitalize">({user.role})</div>
+                </div>
                 <Button
                   onClick={handleLogout}
-                  variant="secondary"
-                  className="min-w-[90px] h-10 px-5 text-sm font-bold bg-gray-200"
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700 hover:border-red-300"
                 >
                   Logout
                 </Button>

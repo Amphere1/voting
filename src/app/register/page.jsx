@@ -7,13 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -26,10 +19,6 @@ export default function RegisterPage() {
     confirmPassword: "",
     phone: "",
     dateOfBirth: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
     voterId: "",
     agreeToTerms: false,
   });
@@ -64,10 +53,6 @@ export default function RegisterPage() {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.dateOfBirth)
       newErrors.dateOfBirth = "Date of birth is required";
-    if (!formData.address.trim()) newErrors.address = "Address is required";
-    if (!formData.city.trim()) newErrors.city = "City is required";
-    if (!formData.state) newErrors.state = "State is required";
-    if (!formData.zipCode.trim()) newErrors.zipCode = "ZIP code is required";
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -113,12 +98,6 @@ export default function RegisterPage() {
       }
     }
 
-    // ZIP code validation
-    const zipRegex = /^\d{5}(-\d{4})?$/;
-    if (formData.zipCode && !zipRegex.test(formData.zipCode)) {
-      newErrors.zipCode = "Please enter a valid ZIP code";
-    }
-
     // Terms acceptance
     if (!formData.agreeToTerms) {
       newErrors.agreeToTerms = "You must agree to the terms and conditions";
@@ -149,10 +128,6 @@ export default function RegisterPage() {
           password: formData.password,
           phone: formData.phone,
           dateOfBirth: formData.dateOfBirth,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
           voterId: formData.voterId,
         }),
       });
@@ -161,7 +136,8 @@ export default function RegisterPage() {
       
       if (response.ok) {
         alert("Registration successful! You are now logged in.");
-        router.push("/elections");
+        // Force page reload to update navbar authentication state
+        window.location.href = "/elections";
       } else {
         setErrors({ general: result.error || "Registration failed. Please try again." });
       }
@@ -311,6 +287,53 @@ export default function RegisterPage() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Voter ID Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="voterId">Voter ID (Optional)</Label>
+                  <Input
+                    id="voterId"
+                    value={formData.voterId}
+                    onChange={(e) =>
+                      handleInputChange("voterId", e.target.value)
+                    }
+                    placeholder="Enter your voter ID if you have one"
+                  />
+                  <p className="text-xs text-gray-500">
+                    If you don't have a voter ID, leave this field empty. You can add it later.
+                  </p>
+                </div>
+              </div>
+
+              {/* Terms and Conditions */}
+              <div className="space-y-4">
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="agreeToTerms"
+                    checked={formData.agreeToTerms}
+                    onChange={(e) =>
+                      handleInputChange("agreeToTerms", e.target.checked)
+                    }
+                    className="mt-1"
+                  />
+                  <Label htmlFor="agreeToTerms" className="text-sm leading-5">
+                    I agree to the{" "}
+                    <Link href="/terms" className="text-blue-600 hover:text-blue-500">
+                      Terms and Conditions
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
+                      Privacy Policy
+                    </Link>
+                    *
+                  </Label>
+                </div>
+                {errors.agreeToTerms && (
+                  <p className="text-sm text-red-500">{errors.agreeToTerms}</p>
+                )}
               </div>
 
               <Button type="submit" disabled={loading} className="w-full">
