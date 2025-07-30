@@ -8,7 +8,8 @@ export async function GET() {
   try {
     await dbConnect();
     
-    const token = await cookies().get('token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value;
     
     if (!token) {
       return NextResponse.json({ isLoggedIn: false }, { status: 200 });
@@ -46,7 +47,8 @@ export async function GET() {
 export async function POST() {
   try {
     // Clear the authentication cookie
-    cookies().set('token', '', {
+    const cookieStore = await cookies();
+    cookieStore.set('token', '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
