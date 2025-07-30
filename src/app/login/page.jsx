@@ -59,45 +59,27 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       return;
     }
-    
     setLoading(true);
-    
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/voter/login', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     email: formData.email,
-      //     password: formData.password,
-      //     rememberMe: formData.rememberMe
-      //   }),
-      // });
-      // const result = await response.json();
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock success response
-      console.log("Login data:", formData);
-      
-      // Store user session (mock)
-      localStorage.setItem('voterAuth', JSON.stringify({
-        isLoggedIn: true,
-        email: formData.email,
-        userType: 'voter',
-        loginTime: new Date().toISOString()
-      }));
-      
-      alert("Login successful!");
-      router.push("/elections");
-      
+      const response = await fetch('/api/auth/voter/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        router.push("/elections");
+      } else {
+        setErrors({ general: result.error || 'Invalid email or password. Please try again.' });
+      }
     } catch (error) {
       console.error("Login error:", error);
       setErrors({ general: "Invalid email or password. Please try again." });

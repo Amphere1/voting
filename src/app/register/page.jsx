@@ -26,12 +26,6 @@ export default function RegisterPage() {
     confirmPassword: "",
     phone: "",
     dateOfBirth: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    voterId: "",
-    agreeToTerms: false,
   });
   const [errors, setErrors] = useState({});
 
@@ -64,10 +58,7 @@ export default function RegisterPage() {
     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
     if (!formData.dateOfBirth)
       newErrors.dateOfBirth = "Date of birth is required";
-    if (!formData.address.trim()) newErrors.address = "Address is required";
-    if (!formData.city.trim()) newErrors.city = "City is required";
-    if (!formData.state) newErrors.state = "State is required";
-    if (!formData.zipCode.trim()) newErrors.zipCode = "ZIP code is required";
+    // ...existing code...
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -113,16 +104,7 @@ export default function RegisterPage() {
       }
     }
 
-    // ZIP code validation
-    const zipRegex = /^\d{5}(-\d{4})?$/;
-    if (formData.zipCode && !zipRegex.test(formData.zipCode)) {
-      newErrors.zipCode = "Please enter a valid ZIP code";
-    }
-
-    // Terms acceptance
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = "You must agree to the terms and conditions";
-    }
+    // ...existing code...
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -138,25 +120,29 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/auth/voter/signup', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // const result = await response.json();
+      // Prepare data for API (exclude confirmPassword)
+      const {
+        confirmPassword,
+        ...apiData
+      } = formData;
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch('/api/auth/voter/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      });
+      const result = await response.json();
 
-      // Mock success response
-      console.log("Registration data:", formData);
-      alert(
-        "Registration successful! Please check your email to verify your account."
-      );
-      router.push("/login");
+      if (!response.ok) {
+        setErrors({ general: result.error || 'Registration failed. Please try again.' });
+        setLoading(false);
+        return;
+      }
+
+      alert("Registration successful! You are now logged in.");
+      router.push("/elections");
     } catch (error) {
       console.error("Registration error:", error);
       setErrors({ general: "Registration failed. Please try again." });
@@ -356,6 +342,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
               </div>
+
 
               <Button type="submit" disabled={loading} className="w-full">
                 {loading ? "Creating Account..." : "Create Account"}

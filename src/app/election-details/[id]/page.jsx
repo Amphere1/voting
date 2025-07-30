@@ -14,9 +14,23 @@ export default function ElectionDetailsPage() {
   const [election, setElection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Protected route: check if user is logged in
+  useEffect(() => {
+    fetch("/api/auth/voter/me").then(async (res) => {
+      const data = await res.json();
+      if (!data.loggedIn) {
+        router.replace("/login");
+      } else {
+        setAuthChecked(true);
+      }
+    });
+  }, [router]);
 
   // Simulate API call - replace this with actual API call in the future
   useEffect(() => {
+    if (!authChecked) return;
     const fetchElectionDetails = async () => {
       try {
         setLoading(true);
@@ -46,7 +60,7 @@ export default function ElectionDetailsPage() {
     if (params.id) {
       fetchElectionDetails();
     }
-  }, [params.id]);
+  }, [params.id, authChecked]);
 
   // Format date for better display
   const formatDate = (dateString) => {
@@ -63,7 +77,7 @@ export default function ElectionDetailsPage() {
     return true;
   };
 
-  if (loading) {
+  if (loading || !authChecked) {
     return (
       <main className="container mx-auto flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex justify-center items-center min-h-[400px]">
@@ -80,7 +94,7 @@ export default function ElectionDetailsPage() {
           <p className="text-red-500 text-lg mb-4">{error || "Election not found"}</p>
           <div className="flex gap-4 justify-center">
             <Button onClick={() => router.back()}>Go Back</Button>
-            <Button variant="outline" onClick={() => router.push("/elections")}>
+            <Button variant="outline" onClick={() => router.push("/elections")}> 
               View All Elections
             </Button>
           </div>
@@ -235,7 +249,7 @@ export default function ElectionDetailsPage() {
           <Button variant="outline" onClick={() => router.back()}>
             ← Go Back
           </Button>
-          <Button variant="outline" onClick={() => router.push("/elections")}>
+          <Button variant="outline" onClick={() => router.push("/elections")}> 
             View All Elections
           </Button>
         </div>

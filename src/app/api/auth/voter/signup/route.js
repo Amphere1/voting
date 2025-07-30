@@ -8,7 +8,14 @@ import { cookies } from 'next/headers';
 
 export async function POST(req) {
   await dbConnect();
-  const { name, email, password } = await req.json();
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    phone,
+    dateOfBirth
+  } = await req.json();
 
   // Check if user already exists
   const existingUser = await User.findOne({ email, role: 'voter' });
@@ -21,9 +28,12 @@ export async function POST(req) {
 
   // Create new voter
   const user = new User({
-    name,
+    firstName,
+    lastName,
     email,
     password: hashedPassword,
+    phone,
+    dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
     role: 'voter',
   });
   await user.save();
