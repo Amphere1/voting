@@ -7,7 +7,7 @@ export async function checkAuthStatus() {
     
     const data = await response.json();
     
-    if (response.ok && data.success) {
+    if (response.ok && data.isLoggedIn) {
       return {
         isAuthenticated: true,
         user: data.user,

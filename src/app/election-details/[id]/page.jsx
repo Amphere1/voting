@@ -310,9 +310,16 @@ export default function ElectionDetailsPage() {
         )}
 
         {/* Navigation */}
-        <div className="mt-8 flex justify-between">
+        <div className="mt-8 flex justify-center gap-4 flex-wrap">
           <Button variant="outline" onClick={() => router.back()}>
             ← Go Back
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => router.push(`/elections/${params.id}/results`)}
+            className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+          >
+            📊 View Results
           </Button>
           <Button variant="outline" onClick={() => router.push("/elections")}>
             View All Elections

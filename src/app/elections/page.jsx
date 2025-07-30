@@ -259,14 +259,25 @@ export default function ElectionsPage() {
                   </Button>
                   
                   {election.status === "ongoing" && (
-                    <Button
-                      asChild
-                      className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                    >
-                      <Link href={`/election-details/${election._id || election.id}`}>
-                        Vote Now
-                      </Link>
-                    </Button>
+                    <>
+                      <Button
+                        asChild
+                        className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      >
+                        <Link href={`/election-details/${election._id || election.id}`}>
+                          Vote Now
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="secondary"
+                        className="flex-1 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                      >
+                        <Link href={`/elections/${election._id || election.id}/results`}>
+                          Live Results
+                        </Link>
+                      </Button>
+                    </>
                   )}
                   
                   {election.status === "upcoming" && (
@@ -282,9 +293,9 @@ export default function ElectionsPage() {
                     <Button
                       asChild
                       variant="secondary"
-                      className="flex-1 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      className="flex-1 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
                     >
-                      <Link href={`/election-details/${election._id || election.id}`}>
+                      <Link href={`/elections/${election._id || election.id}/results`}>
                         View Results
                       </Link>
                     </Button>

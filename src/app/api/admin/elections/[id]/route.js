@@ -1,32 +1,61 @@
 import { dbConnect } from '@/lib/dbconnect';
 import Election from '@/models/election';
 import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/lib/auth';
 
 // Update an election by ID
 export async function PUT(req, { params }) {
-  await dbConnect();
-  const { id } = params;
-  const updates = await req.json();
+  try {
+    await dbConnect();
+    
+    // Verify authentication and require admin role
+    const authResult = await verifyAuth('admin');
+    if (!authResult.success) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
 
-  const election = await Election.findByIdAndUpdate(id, updates, { new: true });
+    const { id } = params;
+    const updates = await req.json();
 
-  if (!election) {
-    return NextResponse.json({ error: 'Election not found' }, { status: 404 });
+    const election = await Election.findByIdAndUpdate(id, updates, { new: true });
+
+    if (!election) {
+      return NextResponse.json({ error: 'Election not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Election updated successfully', 
+      election 
+    }, { status: 200 });
+  } catch (error) {
+    console.error('Update election error:', error);
+    return NextResponse.json({ error: 'Failed to update election' }, { status: 500 });
   }
-
-  return NextResponse.json({ message: 'Election updated successfully', election }, { status: 200 });
 }
 
 // Delete an election by ID
 export async function DELETE(req, context) {
-  await dbConnect();
-  const { id } = await context.params;
+  try {
+    await dbConnect();
+    
+    // Verify authentication and require admin role
+    const authResult = await verifyAuth('admin');
+    if (!authResult.success) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
 
-  const election = await Election.findByIdAndDelete(id);
+    const { id } = await context.params;
 
-  if (!election) {
-    return NextResponse.json({ error: 'Election not found' }, { status: 404 });
+    const election = await Election.findByIdAndDelete(id);
+
+    if (!election) {
+      return NextResponse.json({ error: 'Election not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Election deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Delete election error:', error);
+    return NextResponse.json({ error: 'Failed to delete election' }, { status: 500 });
   }
-
-  return NextResponse.json({ message: 'Election deleted successfully' }, { status: 200 });
 }

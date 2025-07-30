@@ -90,6 +90,9 @@ export default function Navbar() {
             <Link href="/elections" className="nav-link text-base font-medium">
               Elections
             </Link>
+            <Link href="/contact" className="nav-link text-base font-medium">
+              Contact
+            </Link>
             <button 
               onClick={handleAdminClick}
               className="nav-link text-base font-medium cursor-pointer hover:text-blue-600 transition-colors"
@@ -115,6 +118,11 @@ export default function Navbar() {
                 <DropdownMenuItem asChild>
                   <Link href="/elections" className="w-full">
                     Elections
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/contact" className="w-full">
+                    Contact
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleAdminClick} className="cursor-pointer">

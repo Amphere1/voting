@@ -35,6 +35,10 @@ export default function AdminDashboard() {
     status: "upcoming",
   });
 
+  // Edit state
+  const [editingElection, setEditingElection] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+
   // Candidate form state
   const [candidateForm, setCandidateForm] = useState({
     name: "",
@@ -148,6 +152,13 @@ export default function AdminDashboard() {
   // Handle candidate form submission
   const handleAddCandidate = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!candidateForm.name || !candidateForm.party || !candidateForm.manifesto || !candidateForm.electionId) {
+      alert("Please fill in all required fields including selecting an election.");
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -250,6 +261,71 @@ export default function AdminDashboard() {
         alert("Failed to remove candidate. Please try again.");
       }
     }
+  };
+
+  // Handle edit election
+  const handleEditElection = (election) => {
+    setEditingElection(election);
+    setElectionForm({
+      title: election.title,
+      description: election.description,
+      startDate: election.startDate ? new Date(election.startDate).toISOString().slice(0, 16) : "",
+      endDate: election.endDate ? new Date(election.endDate).toISOString().slice(0, 16) : "",
+      status: election.status,
+    });
+    setIsEditMode(true);
+    setActiveTab("create-election");
+  };
+
+  // Handle update election
+  const handleUpdateElection = async (e) => {
+    e.preventDefault();
+    if (!editingElection) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/admin/elections/${editingElection._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(electionForm),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert("Election updated successfully!");
+        await fetchElections();
+        setElectionForm({
+          title: "",
+          description: "",
+          startDate: "",
+          endDate: "",
+          status: "upcoming",
+        });
+        setEditingElection(null);
+        setIsEditMode(false);
+        setActiveTab("overview");
+      } else {
+        alert(result.error || "Failed to update election.");
+      }
+    } catch (error) {
+      console.error("Error updating election:", error);
+      alert("Failed to update election. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel edit mode
+  const handleCancelEdit = () => {
+    setEditingElection(null);
+    setIsEditMode(false);
+    setElectionForm({
+      title: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      status: "upcoming",
+    });
   };
 
   // Get election statistics
@@ -446,7 +522,18 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={() => router.push(`/admin/elections/${election._id}/results`)}
+                        >
+                          📊 Results
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditElection(election)}
+                        >
                           Edit
                         </Button>
                         <Button 
@@ -475,7 +562,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {candidates.map((candidate) => (
-                    <div key={candidate.id} className="border rounded-lg p-4">
+                    <div key={candidate._id} className="border rounded-lg p-4">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
                           <span className="text-lg font-semibold">
@@ -484,11 +571,11 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                           <h3 className="font-semibold">{candidate.name}</h3>
-                          <p className="text-sm text-gray-600">{candidate.party}</p>
+                          <p className="text-sm text-gray-600">{candidate.organization || candidate.party}</p>
                         </div>
                       </div>
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {candidate.manifesto}
+                        {candidate.bio || candidate.manifesto}
                       </p>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500">
@@ -497,7 +584,7 @@ export default function AdminDashboard() {
                         <Button 
                           variant="destructive" 
                           size="sm"
-                          onClick={() => handleRemoveCandidate(candidate.id)}
+                          onClick={() => handleRemoveCandidate(candidate._id)}
                         >
                           Remove
                         </Button>
@@ -514,10 +601,12 @@ export default function AdminDashboard() {
         {activeTab === "create-election" && (
           <Card>
             <CardHeader>
-              <CardTitle>Create New Election</CardTitle>
+              <CardTitle>
+                {isEditMode ? `Edit Election: ${editingElection?.title}` : "Create New Election"}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateElection} className="space-y-6">
+              <form onSubmit={isEditMode ? handleUpdateElection : handleCreateElection} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="title">Election Title *</Label>
@@ -584,9 +673,24 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? "Creating..." : "Create Election"}
-                </Button>
+                <div className="flex gap-4">
+                  <Button type="submit" disabled={loading} className="flex-1">
+                    {loading 
+                      ? (isEditMode ? "Updating..." : "Creating...") 
+                      : (isEditMode ? "Update Election" : "Create Election")
+                    }
+                  </Button>
+                  {isEditMode && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleCancelEdit}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </form>
             </CardContent>
           </Card>
