@@ -25,7 +25,7 @@ export default function Navbar() {
             <Link href="/" className="nav-link text-base font-medium">
               Home
             </Link>
-            <Link href="/results" className="nav-link text-base font-medium">
+            <Link href="/elections" className="nav-link text-base font-medium">
               Elections
             </Link>
           </nav>

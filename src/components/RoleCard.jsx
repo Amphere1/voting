@@ -15,28 +15,30 @@ export default function RoleCard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-center max-w-3xl mx-auto">
           {/* Voter Card */}
           <Card className="border rounded-xl hover:shadow-lg transition-shadow">
-            <CardContent className="flex flex-col gap-4 p-6 text-center">
-              <div className="mx-auto bg-blue-100 rounded-full p-3 w-16 h-16 flex items-center justify-center">
-                <svg
-                  className="w-8 h-8 text-blue-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold">Voter</h3>
-              <p className="text-gray-600">
-                Cast your vote securely and make your voice heard in democratic
-                elections.
-              </p>
-            </CardContent>
+            <Link href="/register">
+              <CardContent className="flex flex-col gap-4 p-6 text-center">
+                <div className="mx-auto bg-blue-100 rounded-full p-3 w-16 h-16 flex items-center justify-center">
+                  <svg
+                    className="w-8 h-8 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold">Voter</h3>
+                <p className="text-gray-600">
+                  Cast your vote securely and make your voice heard in
+                  democratic elections.
+                </p>
+              </CardContent>
+            </Link>
           </Card>
 
           {/* Candidate Card */}
