@@ -18,9 +18,9 @@ export async function PUT(req, { params }) {
 }
 
 // Delete an election by ID
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
   await dbConnect();
-  const { id } = params;
+  const { id } = await context.params;
 
   const election = await Election.findByIdAndDelete(id);
 

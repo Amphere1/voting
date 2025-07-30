@@ -100,8 +100,10 @@ export default function CandidateRegistrationPage() {
       newErrors.termsAccepted = "You must accept the terms and conditions";
     }
 
-    // Profile image validation
-    if (formData.profileImage) {
+    // Profile image validation (required)
+    if (!formData.profileImage) {
+      newErrors.profileImage = "Profile image is required";
+    } else {
       const allowedTypes = [
         "image/jpeg",
         "image/jpg",
@@ -136,33 +138,28 @@ export default function CandidateRegistrationPage() {
     try {
       // Create FormData for file upload
       const formDataToSend = new FormData();
-      
-      // Add all form fields
+
+      // Send all fields expected by backend
       formDataToSend.append('name', `${formData.firstName} ${formData.lastName}`);
       formDataToSend.append('organization', formData.party);
-      formDataToSend.append('age', new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear());
+      if (formData.dateOfBirth) {
+        formDataToSend.append('age', new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear());
+        formDataToSend.append('dateOfBirth', formData.dateOfBirth);
+      }
       formDataToSend.append('bio', formData.manifesto);
-      
-      // Add profile image if exists
+      formDataToSend.append('experience', formData.experience);
+      formDataToSend.append('education', formData.education);
+      formDataToSend.append('achievements', formData.achievements);
+      formDataToSend.append('website', formData.website);
+      formDataToSend.append('twitter', formData.twitter);
+      formDataToSend.append('facebook', formData.facebook);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('slogan', formData.slogan);
+      // Add profile image (required)
       if (formData.profileImage) {
         formDataToSend.append('img', formData.profileImage);
       }
-      
-      // Add additional data as JSON in bio field (since backend expects these fields)
-      const additionalData = {
-        email: formData.email,
-        phone: formData.phone,
-        dateOfBirth: formData.dateOfBirth,
-        slogan: formData.slogan,
-        experience: formData.experience,
-        education: formData.education,
-        achievements: formData.achievements,
-        website: formData.website,
-        twitter: formData.twitter,
-        facebook: formData.facebook,
-      };
-      
-      formDataToSend.append('additionalData', JSON.stringify(additionalData));
 
       const response = await fetch('/api/candidate', {
         method: 'POST',
@@ -170,14 +167,14 @@ export default function CandidateRegistrationPage() {
       });
 
       const result = await response.json();
-      
+
       if (response.ok) {
         alert("Registration successful! Your profile is under review.");
         router.push("/elections");
       } else {
         alert(result.error || "Registration failed. Please try again.");
       }
-      
+
     } catch (error) {
       console.error("Registration error:", error);
       alert("Registration failed. Please try again.");
@@ -324,6 +321,20 @@ export default function CandidateRegistrationPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
+                <Label htmlFor="party">Political Party *</Label>
+                <Input
+                  id="party"
+                  placeholder="e.g., Democratic Party, Republican Party"
+                  value={formData.party}
+                  onChange={(e) => handleInputChange("party", e.target.value)}
+                  className={errors.party ? "border-red-500" : ""}
+                />
+                {errors.party && (
+                  <p className="text-sm text-red-500">{errors.party}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="slogan">Campaign Slogan</Label>
                 <Input
                   id="slogan"
@@ -450,6 +461,23 @@ export default function CandidateRegistrationPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Terms and Conditions */}
+          <div className="flex items-center space-x-2">
+            <input
+              id="termsAccepted"
+              type="checkbox"
+              checked={formData.termsAccepted}
+              onChange={(e) => handleInputChange("termsAccepted", e.target.checked)}
+              className="h-4 w-4 border-gray-300 rounded"
+            />
+            <Label htmlFor="termsAccepted" className="mb-0">
+              I accept the terms and conditions *
+            </Label>
+          </div>
+          {errors.termsAccepted && (
+            <p className="text-sm text-red-500">{errors.termsAccepted}</p>
+          )}
 
           {/* Submit Buttons */}
           <div className="flex gap-4 justify-center">

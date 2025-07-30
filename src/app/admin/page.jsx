@@ -66,7 +66,8 @@ export default function AdminDashboard() {
             const electionsResponse = await fetch('/api/admin/elections');
             if (electionsResponse.ok) {
               const electionsData = await electionsResponse.json();
-              setElections(electionsData.elections || []);
+              const sortedElections = (electionsData.elections || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+              setElections(sortedElections);
             }
 
             // Fetch candidates
@@ -77,8 +78,14 @@ export default function AdminDashboard() {
             }
           } catch (error) {
             console.error("Error fetching data:", error);
-            // Fallback to dummy data
-            setElections(electionsData);
+            // Fallback to dummy data, sorted by createdAt if available
+            const sortedDummyElections = (electionsData || []).sort((a, b) => {
+              if (a.createdAt && b.createdAt) {
+                return new Date(b.createdAt) - new Date(a.createdAt);
+              }
+              return 0;
+            });
+            setElections(sortedDummyElections);
             setCandidates(candidatesData);
           }
         };
@@ -99,20 +106,26 @@ export default function AdminDashboard() {
   const handleCreateElection = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const response = await fetch('/api/admin/elections', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(electionForm),
+        body: JSON.stringify({
+          ...electionForm,
+          candidates: [], // Add empty candidates array for now
+        }),
       });
-
       const result = await response.json();
-
       if (response.ok) {
-        setElections([...elections, result.election]);
+        // Refetch elections to get the latest list from the server
+        const electionsResponse = await fetch('/api/admin/elections');
+        if (electionsResponse.ok) {
+          const electionsData = await electionsResponse.json();
+          const sortedElections = (electionsData.elections || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          setElections(sortedElections);
+        }
         setElectionForm({
           title: "",
           description: "",
@@ -180,19 +193,34 @@ export default function AdminDashboard() {
 
   // Handle election deletion
   const handleDeleteElection = async (electionId) => {
+    if (!electionId) {
+      console.warn("No electionId provided to handleDeleteElection");
+      alert("Election ID is missing. Cannot delete.");
+      return;
+    }
     if (confirm("Are you sure you want to delete this election?")) {
       try {
         const response = await fetch(`/api/admin/elections/${electionId}`, {
           method: 'DELETE',
         });
-
         if (response.ok) {
-          setElections(elections.filter(e => e._id !== electionId));
+          // Refetch elections to get the latest list from the server
+          const electionsResponse = await fetch('/api/admin/elections');
+          if (electionsResponse.ok) {
+            const electionsData = await electionsResponse.json();
+            setElections(electionsData.elections || []);
+          }
           // Also remove candidates from this election
           setCandidates(candidates.filter(c => c.electionId !== electionId));
           alert("Election deleted successfully!");
         } else {
-          const result = await response.json();
+          let result = {};
+          const text = await response.text();
+          try {
+            result = text ? JSON.parse(text) : {};
+          } catch (e) {
+            result = {};
+          }
           alert(result.error || "Failed to delete election.");
         }
       } catch (error) {
@@ -365,7 +393,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {elections.slice(0, 5).map((election) => (
-                    <div key={election.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div key={election._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                       <div>
                         <h3 className="font-semibold">{election.title}</h3>
                         <p className="text-sm text-gray-600">{election.description}</p>
@@ -399,7 +427,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {elections.map((election) => (
-                    <div key={election.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={election._id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{election.title}</h3>
                         <p className="text-gray-600">{election.description}</p>
@@ -424,7 +452,7 @@ export default function AdminDashboard() {
                         <Button 
                           variant="destructive" 
                           size="sm"
-                          onClick={() => handleDeleteElection(election.id)}
+                          onClick={() => handleDeleteElection(election._id)}
                         >
                           Delete
                         </Button>
@@ -607,7 +635,7 @@ export default function AdminDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       {elections.map((election) => (
-                        <SelectItem key={election.id} value={election.id}>
+                        <SelectItem key={election._id} value={election._id}>
                           {election.title}
                         </SelectItem>
                       ))}

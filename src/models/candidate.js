@@ -9,14 +9,15 @@ const candidateSchema = new mongoose.Schema({
   electionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Election' },
   experience: String,
   education: String,
-  achievements: [String],
+  achievements: String, // store as comma-separated string for simplicity
   website: String,
   twitter: String,
   facebook: String,
-  img: {
-    data: Buffer,
-    contentType: String
-  }
+  img: String, // store Cloudinary URL
+  email: String,
+  phone: String,
+  dateOfBirth: String,
+  slogan: String,
 }, {
   timestamps: true
 });
