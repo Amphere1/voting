@@ -109,6 +109,33 @@ export default function AdminLoginPage() {
             <CardTitle className="text-center">Admin Access</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Test Credentials Display */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+              <h3 className="text-sm font-semibold text-blue-800 mb-2">Test Admin Credentials:</h3>
+              <div className="space-y-1 text-sm text-blue-700">
+                <p><strong>Email:</strong> admin@vote.com</p>
+                <p><strong>Password:</strong> admin123</p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3 text-xs"
+                onClick={() => {
+                  setFormData({
+                    email: "admin@vote.com",
+                    password: "admin123"
+                  });
+                  setErrors({});
+                }}
+              >
+                Auto-fill Test Credentials
+              </Button>
+              <p className="text-xs text-blue-600 mt-2">
+                Use these credentials to test the admin dashboard
+              </p>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {errors.general && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-3">

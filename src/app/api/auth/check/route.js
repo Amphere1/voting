@@ -24,12 +24,14 @@ export async function GET() {
       }
 
       return NextResponse.json({ 
+        success: true,
         isLoggedIn: true,
         user: {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: user.role,
+          votedElections: user.votedElections || []
         }
       }, { status: 200 });
       

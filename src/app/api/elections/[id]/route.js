@@ -2,15 +2,27 @@ import { dbConnect } from '@/lib/dbconnect';
 import Election from '@/models/election';
 import Candidate from '@/models/candidate';
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 
 export async function GET(request, { params }) {
   try {
     await dbConnect();
-    const { id } = params;
+    const { id } = await params; // Await params in Next.js 15
+
+    // Validate the election ID
+    if (!id || id === 'undefined' || !mongoose.Types.ObjectId.isValid(id)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid election ID' 
+      }, { status: 400 });
+    }
 
     const election = await Election.findById(id);
     if (!election) {
-      return NextResponse.json({ error: 'Election not found' }, { status: 404 });
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Election not found' 
+      }, { status: 404 });
     }
 
     // Get candidates for this election

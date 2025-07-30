@@ -1,5 +1,6 @@
 import { dbConnect } from '@/lib/dbconnect';
 import Candidate from '@/models/candidate';
+import Election from '@/models/election';
 import { v2 as cloudinary } from 'cloudinary';
 
 cloudinary.config({
@@ -65,6 +66,14 @@ export async function POST(request) {
         slogan,
         electionId,
       });
+
+      // Add candidate to election's candidates array if electionId is provided
+      if (electionId) {
+        await Election.findByIdAndUpdate(electionId, { 
+          $push: { candidates: candidate._id } 
+        });
+      }
+
       return new Response(
         JSON.stringify({ message: 'Candidate registered successfully', candidate }),
         { status: 201 }
