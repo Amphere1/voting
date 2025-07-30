@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,9 @@ import { electionsData } from "@/config/electionsData";
 import { candidatesData } from "@/config/candidatesData";
 
 export default function AdminDashboard() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [elections, setElections] = useState([]);
   const [candidates, setCandidates] = useState([]);
@@ -42,32 +46,54 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    // Load initial data from API
-    const fetchData = async () => {
+    // Check authentication first
+    const checkAuth = async () => {
       try {
-        // Fetch elections
-        const electionsResponse = await fetch('/api/admin/elections');
-        if (electionsResponse.ok) {
-          const electionsData = await electionsResponse.json();
-          setElections(electionsData.elections || []);
+        const response = await fetch('/api/auth/check');
+        const authData = await response.json();
+        
+        if (!authData.isLoggedIn || authData.user.role !== 'admin') {
+          router.push('/admin/login');
+          return;
         }
+        
+        setIsAuthenticated(true);
+        
+        // Load initial data from API after authentication
+        const fetchData = async () => {
+          try {
+            // Fetch elections
+            const electionsResponse = await fetch('/api/admin/elections');
+            if (electionsResponse.ok) {
+              const electionsData = await electionsResponse.json();
+              setElections(electionsData.elections || []);
+            }
 
-        // Fetch candidates - we'll need to create this API endpoint
-        const candidatesResponse = await fetch('/api/candidate');
-        if (candidatesResponse.ok) {
-          const candidatesData = await candidatesResponse.json();
-          setCandidates(candidatesData.candidates || []);
-        }
+            // Fetch candidates
+            const candidatesResponse = await fetch('/api/candidate');
+            if (candidatesResponse.ok) {
+              const candidatesData = await candidatesResponse.json();
+              setCandidates(candidatesData.candidates || []);
+            }
+          } catch (error) {
+            console.error("Error fetching data:", error);
+            // Fallback to dummy data
+            setElections(electionsData);
+            setCandidates(candidatesData);
+          }
+        };
+
+        await fetchData();
       } catch (error) {
-        console.error("Error fetching data:", error);
-        // Fallback to dummy data
-        setElections(electionsData);
-        setCandidates(candidatesData);
+        console.error("Auth check error:", error);
+        router.push('/admin/login');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    checkAuth();
+  }, [router]);
 
   // Handle election form submission
   const handleCreateElection = async (e) => {
@@ -218,6 +244,23 @@ export default function AdminDashboard() {
     { id: "create-election", label: "Create Election", icon: "➕" },
     { id: "add-candidate", label: "Add Candidate", icon: "👤" },
   ];
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verifying admin access...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">

@@ -8,7 +8,7 @@ export async function GET() {
   try {
     await dbConnect();
     
-    const token = cookies().get('token')?.value;
+    const token = await cookies().get('token')?.value;
     
     if (!token) {
       return NextResponse.json({ isLoggedIn: false }, { status: 200 });
