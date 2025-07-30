@@ -134,23 +134,50 @@ export default function CandidateRegistrationPage() {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/candidates/register', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-      // const result = await response.json();
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      
+      // Add all form fields
+      formDataToSend.append('name', `${formData.firstName} ${formData.lastName}`);
+      formDataToSend.append('organization', formData.party);
+      formDataToSend.append('age', new Date().getFullYear() - new Date(formData.dateOfBirth).getFullYear());
+      formDataToSend.append('bio', formData.manifesto);
+      
+      // Add profile image if exists
+      if (formData.profileImage) {
+        formDataToSend.append('img', formData.profileImage);
+      }
+      
+      // Add additional data as JSON in bio field (since backend expects these fields)
+      const additionalData = {
+        email: formData.email,
+        phone: formData.phone,
+        dateOfBirth: formData.dateOfBirth,
+        slogan: formData.slogan,
+        experience: formData.experience,
+        education: formData.education,
+        achievements: formData.achievements,
+        website: formData.website,
+        twitter: formData.twitter,
+        facebook: formData.facebook,
+      };
+      
+      formDataToSend.append('additionalData', JSON.stringify(additionalData));
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch('/api/candidate', {
+        method: 'POST',
+        body: formDataToSend,
+      });
 
-      // Mock success response
-      console.log("Registration data:", formData);
-      alert("Registration successful! Your profile is under review.");
-      router.push("/elections");
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert("Registration successful! Your profile is under review.");
+        router.push("/elections");
+      } else {
+        alert(result.error || "Registration failed. Please try again.");
+      }
+      
     } catch (error) {
       console.error("Registration error:", error);
       alert("Registration failed. Please try again.");

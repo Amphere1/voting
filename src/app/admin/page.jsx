@@ -42,9 +42,31 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
-    // Load initial data
-    setElections(electionsData);
-    setCandidates(candidatesData);
+    // Load initial data from API
+    const fetchData = async () => {
+      try {
+        // Fetch elections
+        const electionsResponse = await fetch('/api/admin/elections');
+        if (electionsResponse.ok) {
+          const electionsData = await electionsResponse.json();
+          setElections(electionsData.elections || []);
+        }
+
+        // Fetch candidates - we'll need to create this API endpoint
+        const candidatesResponse = await fetch('/api/candidate');
+        if (candidatesResponse.ok) {
+          const candidatesData = await candidatesResponse.json();
+          setCandidates(candidatesData.candidates || []);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        // Fallback to dummy data
+        setElections(electionsData);
+        setCandidates(candidatesData);
+      }
+    };
+
+    fetchData();
   }, []);
 
   // Handle election form submission
@@ -53,24 +75,29 @@ export default function AdminDashboard() {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      const newElection = {
-        id: Date.now().toString(),
-        ...electionForm,
-        createdAt: new Date().toISOString(),
-        candidates: [],
-      };
-
-      setElections([...elections, newElection]);
-      setElectionForm({
-        title: "",
-        description: "",
-        startDate: "",
-        endDate: "",
-        status: "upcoming",
+      const response = await fetch('/api/admin/elections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(electionForm),
       });
 
-      alert("Election created successfully!");
+      const result = await response.json();
+
+      if (response.ok) {
+        setElections([...elections, result.election]);
+        setElectionForm({
+          title: "",
+          description: "",
+          startDate: "",
+          endDate: "",
+          status: "upcoming",
+        });
+        alert("Election created successfully!");
+      } else {
+        alert(result.error || "Failed to create election. Please try again.");
+      }
     } catch (error) {
       console.error("Error creating election:", error);
       alert("Failed to create election. Please try again.");
@@ -85,26 +112,38 @@ export default function AdminDashboard() {
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      const newCandidate = {
-        id: Date.now().toString(),
-        ...candidateForm,
-        image: "/api/placeholder/150/150",
-        votes: 0,
-        achievements: [],
-      };
-
-      setCandidates([...candidates, newCandidate]);
-      setCandidateForm({
-        name: "",
-        party: "",
-        manifesto: "",
-        experience: "",
-        education: "",
-        electionId: "",
+      const response = await fetch('/api/candidate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: candidateForm.name,
+          organization: candidateForm.party,
+          age: 30, // Default age, should be collected in form
+          bio: candidateForm.manifesto,
+          electionId: candidateForm.electionId,
+          experience: candidateForm.experience,
+          education: candidateForm.education,
+        }),
       });
 
-      alert("Candidate added successfully!");
+      const result = await response.json();
+
+      if (response.ok) {
+        setCandidates([...candidates, result.candidate]);
+        setCandidateForm({
+          name: "",
+          party: "",
+          manifesto: "",
+          experience: "",
+          education: "",
+          electionId: "",
+        });
+        alert("Candidate added successfully!");
+      } else {
+        alert(result.error || "Failed to add candidate. Please try again.");
+      }
     } catch (error) {
       console.error("Error adding candidate:", error);
       alert("Failed to add candidate. Please try again.");
@@ -114,18 +153,48 @@ export default function AdminDashboard() {
   };
 
   // Handle election deletion
-  const handleDeleteElection = (electionId) => {
+  const handleDeleteElection = async (electionId) => {
     if (confirm("Are you sure you want to delete this election?")) {
-      setElections(elections.filter(e => e.id !== electionId));
-      // Also remove candidates from this election
-      setCandidates(candidates.filter(c => c.electionId !== electionId));
+      try {
+        const response = await fetch(`/api/admin/elections/${electionId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setElections(elections.filter(e => e._id !== electionId));
+          // Also remove candidates from this election
+          setCandidates(candidates.filter(c => c.electionId !== electionId));
+          alert("Election deleted successfully!");
+        } else {
+          const result = await response.json();
+          alert(result.error || "Failed to delete election.");
+        }
+      } catch (error) {
+        console.error("Error deleting election:", error);
+        alert("Failed to delete election. Please try again.");
+      }
     }
   };
 
   // Handle candidate removal
-  const handleRemoveCandidate = (candidateId) => {
+  const handleRemoveCandidate = async (candidateId) => {
     if (confirm("Are you sure you want to remove this candidate?")) {
-      setCandidates(candidates.filter(c => c.id !== candidateId));
+      try {
+        const response = await fetch(`/api/candidate?id=${candidateId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setCandidates(candidates.filter(c => c._id !== candidateId));
+          alert("Candidate removed successfully!");
+        } else {
+          const result = await response.json();
+          alert(result.error || "Failed to remove candidate.");
+        }
+      } catch (error) {
+        console.error("Error removing candidate:", error);
+        alert("Failed to remove candidate. Please try again.");
+      }
     }
   };
 

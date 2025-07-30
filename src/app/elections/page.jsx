@@ -15,25 +15,26 @@ export default function ElectionsPage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
 
-  // Simulate API call - replace this with actual API call in the future
+  // Fetch elections from API
   useEffect(() => {
     const fetchElections = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Simulate API delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/elections');
-        // const data = await response.json();
-        // setElections(data);
-
-        setElections(electionsData);
+        const response = await fetch('/api/elections');
+        const data = await response.json();
+        
+        if (response.ok) {
+          setElections(data);
+        } else {
+          throw new Error(data.error || 'Failed to fetch elections');
+        }
       } catch (err) {
         setError("Failed to fetch elections. Please try again later.");
         console.error("Error fetching elections:", err);
+        // Fallback to dummy data in case of error
+        setElections(electionsData);
       } finally {
         setLoading(false);
       }

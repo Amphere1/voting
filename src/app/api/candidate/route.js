@@ -75,3 +75,28 @@ export async function GET(request) {
     return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
   }
 }
+
+export async function DELETE(request) {
+  try {
+    await dbConnect();
+    const { searchParams } = new URL(request.url);
+    const candidateId = searchParams.get('id');
+    
+    if (!candidateId) {
+      return new Response(JSON.stringify({ error: 'Candidate ID is required' }), { status: 400 });
+    }
+
+    const deletedCandidate = await Candidate.findByIdAndDelete(candidateId);
+    
+    if (!deletedCandidate) {
+      return new Response(JSON.stringify({ error: 'Candidate not found' }), { status: 404 });
+    }
+
+    return new Response(
+      JSON.stringify({ message: 'Candidate deleted successfully', candidate: deletedCandidate }),
+      { status: 200 }
+    );
+  } catch (error) {
+    return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500 });
+  }
+}
